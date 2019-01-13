@@ -7,14 +7,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// ErrNilLogger is returned when a nil logger is passed to an adapter function like `FromZLogger'
 var ErrNilLogger = errors.New("provided logger is nil")
+// ErrUnmatchedKeyVals is returned when a set of keyval pairs is odd, i.e. a key is missing a value.
 var ErrUnmatchedKeyVals = errors.New("got unmatched keys/values")
 
+// GKZLogger is a wrapper for *zap.Logger that implements the github.com/go-kit/kit/log.Logger interface
 type GKZLogger struct {
 	s *zap.SugaredLogger
 	messageKey string
 }
 
+// FromZLogger takes a valid *zap.Logger and wraps it in a *GKZLogger
+// Call `SetMessageKey` if the message key differs from the default of "message"
 func FromZLogger(l *zap.Logger) (*GKZLogger, error) {
 	if l == nil {
 		return nil, ErrNilLogger
@@ -22,6 +27,8 @@ func FromZLogger(l *zap.Logger) (*GKZLogger, error) {
 	return FromZSLogger(l.Sugar())
 }
 
+// FromZSLogger takes a valid *zap.SugaredLogger and wraps it in a *GKZLogger
+// Call `SetMessageKey` if the message key differs from the default of "message"
 func FromZSLogger(s *zap.SugaredLogger) (*GKZLogger, error) {
 	if s == nil {
 		return nil, ErrNilLogger
@@ -32,13 +39,24 @@ func FromZSLogger(s *zap.SugaredLogger) (*GKZLogger, error) {
 	}, nil
 }
 
+// SetMessageKey changes the field key that the GKZLogger will extract the message from
+// By default, the message key is "message"
 func (gkz *GKZLogger) SetMessageKey(key string) {
 	gkz.messageKey = key
 }
 
+// Log translates a kitlog set of keyval pairs to a leveled *zap.SugaredLogger.(Debugw, Errorw, Infow, etc) call.
+// Log levels are determined using values from github.com/go-kit/kit/log/level constants.
+// If no level is determined, Log defaults to logging at INFO level.
+// Messages are determined using the message key set on the GKZLogger.
+// If no message is determined, the message is left blank.
 func (gkz *GKZLogger) Log(keyvals ...interface{}) error {
 	if len(keyvals) == 0 {
 		return nil
+	}
+
+	if len(keyvals) % 2 != 0 {
+		return ErrUnmatchedKeyVals
 	}
 
 	// extract message key and value

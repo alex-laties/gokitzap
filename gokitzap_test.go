@@ -39,6 +39,10 @@ func TestBasic(t *testing.T) {
 		observed.AllUntimed(),
 		"entry mismatch",
 	)
+
+	assert.Equal(t, ErrUnmatchedKeyVals, gkzl.Log("this should not work"))
+	assert.Equal(t, ErrUnmatchedKeyVals, gkzl.Log("1", "2", "3"))
+	assert.NoError(t, gkzl.Log())
 }
 
 func TestComplex(t *testing.T) {
