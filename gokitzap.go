@@ -9,19 +9,17 @@ import (
 
 var ErrNilLogger = errors.New("provided logger is nil")
 var ErrUnmatchedKeyVals = errors.New("got unmatched keys/values")
-var ErrOnlyLevel = errors.New("only got a level in the log")
 
 type GKZLogger struct {
 	s *zap.SugaredLogger
+	messageKey string
 }
 
 func FromZLogger(l *zap.Logger) (*GKZLogger, error) {
 	if l == nil {
 		return nil, ErrNilLogger
 	}
-	return &GKZLogger{
-		s: l.Sugar(),
-	}, nil
+	return FromZSLogger(l.Sugar())
 }
 
 func FromZSLogger(s *zap.SugaredLogger) (*GKZLogger, error) {
@@ -30,47 +28,78 @@ func FromZSLogger(s *zap.SugaredLogger) (*GKZLogger, error) {
 	}
 	return &GKZLogger{
 		s: s,
+		messageKey: "message",
 	}, nil
+}
+
+func (gkz *GKZLogger) SetMessageKey(key string) {
+	gkz.messageKey = key
 }
 
 func (gkz *GKZLogger) Log(keyvals ...interface{}) error {
 	if len(keyvals) == 0 {
 		return nil
 	}
+
+	// extract message key and value
+	var msg string
+	for i := 0; i < len(keyvals); i += 2 {
+		if keyvals[i] == gkz.messageKey {
+			msg = keyvals[i+1].(string)
+
+			if len(keyvals) == 2 {
+				keyvals = nil
+				break
+			}
+
+			switch {
+			case i == 0: // head
+				keyvals = keyvals[2:]
+			case i+2 > len(keyvals) - 1: // tail
+				keyvals = keyvals[0:i]
+			default:
+				keyvals = append(keyvals[0:i], keyvals[i+2:]...)
+			}
+			break
+		}
+	}
+
 	// extract log level key and value
-	var l level.Value
+	l := level.InfoValue()
 	for i := 0; i < len(keyvals); i += 2 {
 		if keyvals[i] == level.Key() {
-			if len(keyvals) == 2 { // only a level is logged?
-				return ErrOnlyLevel
-			}
+			
 
 			l = keyvals[i+1].(level.Value)
 
 			// have to strip log level from the result
+			if len(keyvals) == 2 { // only a level is logged?
+				keyvals = nil
+				break
+			}
+
 			switch {
 			case i == 0: // head
 				keyvals = keyvals[2:]
 			case i + 2 > len(keyvals) - 1: // tail
 				keyvals  = keyvals[0:i]
 			default: // middle 
-				keyvals = append(keyvals[0:i], keyvals[i+2:])
+				keyvals = append(keyvals[0:i], keyvals[i+2:]...)
 			}
 			break
 		}
 	}
 
+
 	switch l {
 	case level.DebugValue():
-		gkz.s.Debug(keyvals)
+		gkz.s.Debugw(msg, keyvals...)
 	case level.ErrorValue():
-		gkz.s.Error(keyvals)
+		gkz.s.Errorw(msg, keyvals...)
 	case level.WarnValue():
-		gkz.s.Warn(keyvals)
+		gkz.s.Warnw(msg, keyvals...)
 	case level.InfoValue():
-		gkz.s.Info(keyvals)
-	default: // no level so go for Info
-		gkz.s.Info(keyvals)
+		gkz.s.Infow(msg, keyvals...)
 	}
 
 	return nil
