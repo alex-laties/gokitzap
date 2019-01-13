@@ -1,4 +1,4 @@
-# gokit-zap [![Build Status][ci-img]][ci]
+# gokit-zap [![Build Status](https://travis-ci.com/alex-laties/gokitzap.svg?branch=master)](https://travis-ci.com/alex-laties/gokitzap)
 
 A quick adapter to allow the use of [`zap`](https://github.com/uber-go/zap) as the underlying logger for [`go-kit/log`](https://github.com/go-kit/kit/tree/master/log).
 Transparently translates log levels in go-kit to zap log levels.
