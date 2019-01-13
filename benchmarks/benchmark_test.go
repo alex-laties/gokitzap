@@ -58,20 +58,24 @@ func randomVal(t ValType) interface{} {
 
 // generate a random semi-structured key-val log line, between 1 and 10 fields + a message
 func makeMessage() []interface{} {
-	message := make([]interface{}, 0, 22)
-	// always include a message
-	message = append(message, "message")
-	message = append(message, randomVal(STRING))
-	keyvalPairs := rand.Intn(10) + 1 // rand.Intn(10) returns 0-9, but we want 1-10, hence +1
-	for i := 0; i < keyvalPairs; i++ {
-		// key
+	var message []interface{}
+	for {
+		message = make([]interface{}, 0, 22)
+		// always include a message
+		message = append(message, "message")
 		message = append(message, randomVal(STRING))
-		// val
-		valtype := TYPES[rand.Intn(len(TYPES))]
-		message = append(message, randomVal(valtype))
+		keyvalPairs := rand.Intn(10) + 1 // rand.Intn(10) returns 0-9, but we want 1-10, hence +1
+		for i := 0; i < keyvalPairs; i++ {
+			// key
+			message = append(message, randomVal(STRING))
+			// val
+			valtype := TYPES[rand.Intn(len(TYPES))]
+			message = append(message, randomVal(valtype))
+		}
+		if len(message) % 2 == 0 {
+			return message
+		}
 	}
-
-	return message
 }
 
 func randomMessage() []interface{} {
@@ -109,7 +113,7 @@ func BenchmarkGoKit(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			l.Log(randomMessage())
+			l.Log(randomMessage()...)
 		}
 	})
 }
@@ -122,13 +126,13 @@ func BenchmarkGoKitLevels(b *testing.B) {
 		for pb.Next() {
 			switch randomLogLevel() {
 			case DEBUG:
-				level.Debug(l).Log(randomMessage())
+				level.Debug(l).Log(randomMessage()...)
 			case ERROR:
-				level.Error(l).Log(randomMessage())
+				level.Error(l).Log(randomMessage()...)
 			case WARN:
-				level.Warn(l).Log(randomMessage())
+				level.Warn(l).Log(randomMessage()...)
 			case INFO:
-				level.Info(l).Log(randomMessage())
+				level.Info(l).Log(randomMessage()...)
 			}
 		}
 	})
@@ -140,7 +144,7 @@ func BenchmarkZapSugar(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			l.Info(randomMessage())
+			l.Info(randomMessage()...)
 		}
 	})
 }
@@ -153,13 +157,13 @@ func BenchmarkZapSugarLevels(b *testing.B) {
 		for pb.Next() {
 			switch randomLogLevel() {
 			case DEBUG:
-				l.Debug(randomMessage())
+				l.Debug(randomMessage()...)
 			case WARN:
-				l.Warn(randomMessage())
+				l.Warn(randomMessage()...)
 			case ERROR:
-				l.Error(randomMessage())
+				l.Error(randomMessage()...)
 			case INFO:
-				l.Info(randomMessage()) 
+				l.Info(randomMessage()...) 
 			}
 		}
 	})
@@ -171,7 +175,7 @@ func BenchmarkGKZ(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			l.Log(randomMessage())
+			l.Log(randomMessage()...)
 		}
 	})
 }
@@ -184,13 +188,13 @@ func BenchmarkGKZLevels(b *testing.B) {
 		for pb.Next() {
 			switch randomLogLevel() {
 			case DEBUG:
-				level.Debug(l).Log(randomMessage())
+				level.Debug(l).Log(randomMessage()...)
 			case WARN:
-				level.Warn(l).Log(randomMessage())
+				level.Warn(l).Log(randomMessage()...)
 			case ERROR:
-				level.Error(l).Log(randomMessage())
+				level.Error(l).Log(randomMessage()...)
 			case INFO:
-				level.Info(l).Log(randomMessage())
+				level.Info(l).Log(randomMessage()...)
 			}
 		}
 	})
