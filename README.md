@@ -39,7 +39,15 @@ It's not unreasonable to want more performance from your logging framework, but 
 `gokit-zap` allows you to adopt `zap` under the hood while still offering the `go-kit/log` interface, allowing for immediate performance benefits while one transitions to `zap` completely.
 
 ## Benchmarks
+Ran on MacOS 10.14.2
+
 ```
+# sysctl -n machdep.cpu.brand_string
+Intel(R) Core(TM) i5-8500B CPU @ 3.00GHz
+
+# sysctl hw.memsize
+hw.memsize: 8589934592
+
 # make benchmark
 PASS
 ok  	github.com/alex-laties/gokitzap	0.011s
