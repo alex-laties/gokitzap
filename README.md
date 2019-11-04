@@ -27,7 +27,7 @@ func main() {
   logger.Log("message", "hello world")
   level.Debug(logger).Log("message", "levels work too")
 
-  level.Info("message", "startup time", "t", time.Since(mainStart))
+  level.Info(logger).Log("message", "startup time", "t", time.Since(mainStart))
 }
 ```
 
